@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FaAddressBook, FaQrcode, FaInfoCircle, FaTimes } from 'react-icons/fa';
 import './styles.css';
 
 const USDTSendApp = () => {
@@ -11,6 +12,7 @@ const USDTSendApp = () => {
   const [message, setMessage] = useState('');
   const [tronWeb, setTronWeb] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   
   // USDT contract on TRON (TRC-20)
   const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
@@ -145,6 +147,19 @@ const USDTSendApp = () => {
     setMessage('Maximum amount set');
   };
 
+  // const handleScanQRCode = () => {
+  //   setShowScanner(true);
+  //   // In a real app, you would integrate with a QR code scanner library
+  //   // For now, we'll simulate scanning after a delay
+  //   setTimeout(() => {
+  //     // Simulate scanning a QR code with a dummy address
+  //     const scannedAddress = 'TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv';
+  //     setAddress(scannedAddress);
+  //     setShowScanner(false);
+  //     setMessage('QR code scanned successfully');
+  //   }, 2000);
+  // };
+
   const handleNext = async () => {
     if (!account || !tronWeb) {
       setMessage('Please connect your TRON wallet first');
@@ -199,8 +214,45 @@ const USDTSendApp = () => {
     }
   };
 
+  // Clear functions for each input field
+  const clearAddress = () => {
+    setAddress('');
+  };
+
+  const clearAmount = () => {
+    setAmount('');
+  };
+
+  const clearMemo = () => {
+    setMemo('');
+  };
+
   return (
     <div className="send-usdt-container">
+      {/* QR Scanner Modal */}
+      {showScanner && (
+        <div className="scanner-modal">
+          <div className="scanner-content">
+            <div className="scanner-header">
+              <h3>Scan QR Code</h3>
+              <button className="close-scanner" >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="scanner-placeholder">
+              <div className="scanner-animation">
+                <FaQrcode size={80} />
+                <p>Scanning QR code...</p>
+                <div className="scanning-line"></div>
+              </div>
+            </div>
+            <div className="scanner-footer">
+              <p>Point your camera at a USDT address QR code</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="send-usdt-card">
         {/* Header */}
         <div className="send-header">
@@ -219,26 +271,27 @@ const USDTSendApp = () => {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="address-input"
-              placeholder="Search or Enter TRON Address (T...)"
+              placeholder="Search or Enter "
             />
             <div className="input-actions">
+              {address && (
+                <button className="cancel-icon" onClick={clearAddress}>
+                  <FaTimes />
+                </button>
+              )}
               <button className="paste-button" onClick={handlePaste}>Paste</button>
               <button className="icon-button contacts-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/>
-                </svg>
+                <FaAddressBook />
               </button>
-              <button className="icon-button qr-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM17 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2z"/>
-                </svg>
+              <button className="icon-button qr-icon" >
+                <FaQrcode />
               </button>
             </div>
           </div>
         </div>
 
         {/* Amount Input */}
-        <div className="input-section">
+        <div className="inputAmount-section ">
           <label className="input-label">Amount</label>
           <div className="input-container">
             <input
@@ -249,6 +302,12 @@ const USDTSendApp = () => {
               placeholder="USDT Amount"
             />
             <div className="amount-actions">
+              {amount && (
+                <button className="cancel-icon" onClick={clearAmount}>
+                  <FaTimes />
+                </button>
+              )}
+              <p className="usdt-label">USDT</p>
               <button className="max-button" onClick={setMaxAmount}>Max</button>
             </div>
           </div>
@@ -268,17 +327,16 @@ const USDTSendApp = () => {
               placeholder=""
             />
             <div className="memo-actions">
+              {memo && (
+                <button className="cancel-icon" onClick={clearMemo}>
+                  <FaTimes />
+                </button>
+              )}
               <button className="icon-button qr-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM17 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2z"/>
-                </svg>
+                <FaQrcode />
               </button>
               <button className="icon-button info-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" stroke="white" strokeWidth="2"/>
-                  <circle cx="12" cy="8" r="1" fill="white"/>
-                </svg>
+                <FaInfoCircle />
               </button>
             </div>
           </div>
