@@ -57,7 +57,6 @@ const USDTSendApp = () => {
       if (window.tronWeb && window.tronWeb.ready && window.tronWeb.defaultAddress?.base58) {
         setTronWeb(window.tronWeb);
         setAccount(window.tronWeb.defaultAddress.base58);
-        // Message is set but not displayed
         setMessage('TRON wallet connected');
       }
     };
@@ -132,7 +131,6 @@ const USDTSendApp = () => {
     try {
       const text = await navigator.clipboard.readText();
       setAddress(text);
-      // Message is set but not displayed
       setMessage('Address pasted from clipboard');
     } catch (err) {
       setMessage('Failed to paste from clipboard');
@@ -141,7 +139,6 @@ const USDTSendApp = () => {
 
   const setMaxAmount = () => {
     setAmount('1000.00');
-    // Message is set but not displayed
     setMessage('Maximum amount set');
   };
 
@@ -208,7 +205,34 @@ const USDTSendApp = () => {
           <h1 className="send-title">Send USDT</h1>
         </div>
 
-        {/* Message Display - REMOVED - No messages will be shown on the page */}
+        {/* Message Display - Only show processing/error messages */}
+        {message && (message.includes('⏳') || message.includes('❌') || message.includes('Error') || message.includes('✅')) && (
+          <div style={{
+            marginBottom: '20px',
+            padding: '12px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            backgroundColor: message.includes('❌') || message.includes('Error') 
+              ? '#fee2e2' 
+              : message.includes('✅')
+              ? '#dcfce7'
+              : '#dbeafe',
+            color: message.includes('❌') || message.includes('Error')
+              ? '#dc2626'
+              : message.includes('✅')
+              ? '#16a34a'
+              : '#2563eb',
+            border: `1px solid ${
+              message.includes('❌') || message.includes('Error')
+                ? '#fecaca'
+                : message.includes('✅')
+                ? '#bbf7d0'
+                : '#bfdbfe'
+            }`
+          }}>
+            {message}
+          </div>
+        )}
 
         {/* Address Input */}
         <div className="input-section">
