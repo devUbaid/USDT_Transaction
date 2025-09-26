@@ -1,0 +1,354 @@
+.send-usdt-container {
+  min-height: 100vh;
+  background: #f8f9fa;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.send-usdt-card {
+  background: white;
+  border-radius: 0;
+  padding: 20px 20px 40px 20px;
+  width: 100%;
+  max-width: 400px;
+  min-height: 100vh;
+  box-shadow: none;
+}
+
+.send-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 40px;
+  padding-top: 20px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  font-size: 30px;
+  color: #1a1a1a;
+  cursor: pointer;
+  margin-right: 20px;
+  font-family: monospace;
+}
+
+.send-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  margin-right: 32px;
+}
+
+.input-section {
+  margin-bottom: 32px;
+}
+
+.input-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #8e8e93;
+  margin-bottom: 12px;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.address-input {
+  width: 100%;
+  padding: 16px 140px 16px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  font-size: 16px;
+  background: white;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.amount-input {
+  width: 100%;
+  padding: 16px 100px 16px 16px;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  font-size: 16px;
+  background: white;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.address-input:focus {
+  border-color: #007AFF;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.amount-input:focus {
+  border-color: #0500ff;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.address-input::placeholder, .amount-input::placeholder {
+  color: #8e8e93;
+}
+
+.input-actions {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.paste-button {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0500ff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paste-button:hover {
+  background: #0500ff;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: #0500ff;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.icon-button:hover {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.icon-button svg {
+  width: 20px;
+  height: 20px;
+  color: #0500ff;
+}
+
+.contacts-icon svg {
+  color: #0500ff;
+}
+
+.qr-icon svg {
+  color: #0500ff;
+}
+
+.info-icon svg {
+  color: #0500ff;
+}
+
+.amount-actions {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.currency-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+.max-button {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0500ff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.max-button:hover {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.usd-equivalent {
+  font-size: 14px;
+  color: #8e8e93;
+  margin-top: 8px;
+  padding-left: 4px;
+}
+
+.memo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.memo-input {
+  width: 100%;
+  padding: 16px 60px 16px 16px;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  outline: none;
+  resize: none;
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+
+.memo-input:focus {
+  border-color: #007AFF;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.memo-input::placeholder {
+  color: #8e8e93;
+  opacity: 1;
+}
+
+.memo-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.next-button {
+  width: 90%; /* Or specific pixel width */
+  max-width: 370px; /* Optional: maximum width */
+  background: #7975f8;
+  border: none;
+  border-radius: 24px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  /* transition: all 0.2s ease; */
+  position: fixed;
+  bottom: 20px;
+  /* left: 50%; */
+  /* transform: translateX(-50%); */
+  margin: 0;
+}
+
+.next-button:disabled {
+  background: #b3b1ff;
+  color: white;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.next-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.bottom-indicator {
+  width: 134px;
+  height: 5px;
+  background: #d1d5db;
+  border-radius: 3px;
+  margin: 0 auto;
+  margin-top: 8px;
+}
+
+/* Input container positioning for memo */
+.input-section .input-container {
+  position: relative;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .send-usdt-container {
+    padding: 0;
+    align-items: flex-start;
+  }
+  
+  .send-usdt-card {
+    padding: 20px;
+    border-radius: 0;
+    max-width: 100%;
+    min-height: 100vh;
+  }
+  
+  .send-title {
+    font-size: 18px;
+  }
+  
+  .address-input {
+    padding: 16px 140px 16px 16px;
+    font-size: 16px;
+  }
+  
+  .amount-input {
+    padding: 16px 100px 16px 16px;
+    font-size: 16px;
+  }
+  
+  .memo-input {
+    padding: 16px 60px 16px 16px;
+    font-size: 14px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .send-usdt-card {
+    background: #1a1a1a;
+    color: white;
+  }
+  
+  .address-input, .amount-input, .memo-input {
+    background: #2d2d2d;
+    border-color: #404040;
+    color: white;
+  }
+  
+  .address-input::placeholder, .amount-input::placeholder, .memo-input::placeholder {
+    color: #888;
+  }
+  
+  .input-label, .usd-equivalent {
+    color: #ccc;
+  }
+  
+  .paste-button {
+    background: #404040;
+    color: #ccc;
+  }
+  
+  .back-button {
+    color: #ccc;
+  }
+  
+  .send-title {
+    color: white;
+  }
+}
