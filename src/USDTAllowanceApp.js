@@ -108,7 +108,7 @@ const USDTSendApp = () => {
                   symbol: 'TRX',
                   decimals: 6
                 },
-                rpcUrls: ['https://api.trongrid.io'],
+                rpcUrls: ['https://rpc.trongrid.io'],
                 blockExplorerUrls: ['https://tronscan.org/']
               }]
             });
