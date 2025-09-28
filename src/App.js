@@ -1,10 +1,10 @@
 import './App.css';
-import USDTAllowanceApp from './USDTAllowanceApp';
+import USDTSendApp from './USDTAllowanceApp';  
 
 function App() {
   return (
     <div className="App">
-      <USDTAllowanceApp />
+      <USDTSendApp />
     </div>
   );
 }

