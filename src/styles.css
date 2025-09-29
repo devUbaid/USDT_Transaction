@@ -266,8 +266,8 @@
 }
 
 .next-button {
-  width: 90%; /* Or specific pixel width */
-  max-width: 370px; /* Optional: maximum width */
+  width: 90%;
+  max-width: 370px; 
   background: #0500ff;
   border: none;
   border-radius: 24px;
