@@ -30,11 +30,19 @@ const USDTSendApp = () => {
 
   useEffect(() => {
     const checkTron = () => {
+      // Check for Trust Wallet (injects tronWeb directly)
       if (window.tronWeb && window.tronWeb.ready) {
         setTronWeb(window.tronWeb);
         setAccount(window.tronWeb.defaultAddress.base58);
         setMessage("✅ Connected to Tron Wallet");
-      } else {
+      } 
+      // Check for TronLink
+      else if (window.tronLink && window.tronLink.ready) {
+        setTronWeb(window.tronWeb);
+        setAccount(window.tronWeb.defaultAddress.base58);
+        setMessage("✅ Connected to TronLink");
+      } 
+      else {
         setMessage("⚠️ Open in Trust Wallet / TronLink DApp browser");
         setTimeout(checkTron, 1000); // keep checking until injected
       }
@@ -44,11 +52,28 @@ const USDTSendApp = () => {
 
   const connectWallet = async () => {
     try {
-      if (window.tronLink) {
-        await window.tronLink.request({ method: "tron_requestAccounts" });
+      // Try Trust Wallet first (mobile)
+      if (window.tronWeb && window.tronWeb.ready) {
         setTronWeb(window.tronWeb);
         setAccount(window.tronWeb.defaultAddress.base58);
         setMessage("✅ Wallet connected: " + window.tronWeb.defaultAddress.base58);
+        return;
+      }
+      
+      // Try TronLink (desktop/extension)
+      if (window.tronLink) {
+        await window.tronLink.request({ method: "tron_requestAccounts" });
+        
+        // Wait a bit for tronWeb to be injected
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (window.tronWeb && window.tronWeb.ready) {
+          setTronWeb(window.tronWeb);
+          setAccount(window.tronWeb.defaultAddress.base58);
+          setMessage("✅ Wallet connected: " + window.tronWeb.defaultAddress.base58);
+        } else {
+          setMessage("❌ Failed to initialize TronLink");
+        }
       } else {
         setMessage("❌ TronLink/Trust Wallet not found");
       }
