@@ -376,9 +376,9 @@
 
 .token-section h2 {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 4px;
 }
 
 .token-selector {
@@ -386,8 +386,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: #f5f7fa;
+  border-radius: 12px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -399,12 +399,11 @@
 .token-info {
   display: flex;
   align-items: center;
-  gap: 12px;
 }
 
 .token-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -416,41 +415,58 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: 10px;
 }
 
-.trx-icon {
-  width: 32px;
-  height: 32px;
+.trx-icon, .usdt-icon {
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background-color: white;
+  border: 1px solid #f0f0f0;
 }
 
 .verification-badge {
   position: absolute;
   bottom: -2px;
   right: -2px;
-  width: 14px;
-  height: 14px;
-  background: #232c41;
+  width: 16px;
+  height: 16px;
+  background: #000000;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: bold;
   color: white;
-  border: 2px solid white;
+  border: 1.5px solid white;
 }
 
 .token-info span {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.token-name {
+  color: #333 !important;
+  font-weight: 600 !important;
+  font-size: 20px !important;
+  display: flex;
+  align-items: center;
+}
+
+.token-subtext {
+  font-weight: 400;
+  color: #a0a0a0;
+  font-size: 15px;
+  margin-left: 5px;
 }
 
 .chevron {
-  color: #999;
+  color: #333;
   font-size: 14px;
 }
 
@@ -500,6 +516,22 @@
   font-size: 14px;
   color: #666;
   margin-left: 4px;
+}
+
+.available-balance span {
+  display: flex;
+  align-items: center;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.available-balance span:first-child {
+  color: #262626;
+  animation: pulse 1.5s infinite ease-in-out;
 }
 
 /* Notes Section */

